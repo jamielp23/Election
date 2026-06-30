@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import geo from '../data/mapGeo.json';
 import type { StateLive, StateStatus } from '../engine/types';
@@ -7,12 +6,12 @@ import { StateTooltip } from './StateTooltip';
 import { hexA } from '../lib/format';
 
 const STATUS_ALPHA: Record<StateStatus, number> = {
-  'not-closed': 0.1,
-  closed: 0.2,
-  counting: 0.78,
-  'too-close': 0.5,
-  lean: 0.68,
-  likely: 0.88,
+  'not-closed': 0.12,
+  closed: 0.22,
+  counting: 0.8,
+  'too-close': 0.52,
+  lean: 0.7,
+  likely: 0.9,
   called: 1,
 };
 
@@ -21,10 +20,18 @@ function fillFor(live: StateLive, color: string | null): string {
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
+/** Font size that keeps a label inside its state's bounding box. */
+function labelSize(name: string, bbox: number[]): number {
+  const w = bbox[2] - bbox[0];
+  const h = bbox[3] - bbox[1];
+  const byWidth = (w * 1.7) / Math.max(6, name.length);
+  return Math.max(8, Math.min(15, byWidth, h * 0.5));
+}
+
 /**
- * Geographic vector map of the 36 states, reconstructed from the reference
- * drawing. Each state is a real shape that fills with its leading party's
- * colour as the count comes in; hover for live detail, click to pin.
+ * Geographic vector map of the 36 states using the *exact* geometry from
+ * map.svg (paths preserved verbatim). Each state fills with its leading
+ * party's colour as the count comes in; hover for live detail, click to pin.
  */
 export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
   const live = useStore((s) => s.snapshot?.live);
@@ -36,7 +43,6 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
   const setSelected = useStore((s) => s.setSelected);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
-  // Map each geo shape to its model index by name.
   const nameToIndex = useMemo(() => {
     const m = new Map<string, number>();
     states.forEach((s, i) => m.set(s.name, i));
@@ -45,12 +51,13 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
 
   if (!live) return null;
 
-  // Draw hovered/selected shapes last so their highlight sits on top.
+  // Draw hovered/selected last so their highlight sits on top.
   const ordered = [...geo.states].sort((a, b) => {
-    const ai = nameToIndex.get(a.name)!;
-    const bi = nameToIndex.get(b.name)!;
-    const rank = (i: number) => (i === selected ? 2 : i === hovered ? 1 : 0);
-    return rank(ai) - rank(bi);
+    const rank = (n: string) => {
+      const i = nameToIndex.get(n);
+      return i === selected ? 2 : i === hovered ? 1 : 0;
+    };
+    return rank(a.name) - rank(b.name);
   });
 
   return (
@@ -84,28 +91,24 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
         }}
         onMouseLeave={() => setHovered(null)}
       >
-        <svg
-          viewBox={geo.viewBox}
-          preserveAspectRatio="xMidYMid meet"
-          className="h-full w-full"
-        >
+        <svg viewBox={geo.viewBox} preserveAspectRatio="xMidYMid meet" className="h-full w-full">
           <defs>
-            <radialGradient id="sea" cx="50%" cy="40%" r="75%">
+            <radialGradient id="sea" cx="50%" cy="38%" r="80%">
               <stop offset="0%" stopColor="#0e1a30" />
               <stop offset="100%" stopColor="#070d18" />
             </radialGradient>
             <filter id="landshadow" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="#000" floodOpacity="0.55" />
+              <feDropShadow dx="0" dy="7" stdDeviation="11" floodColor="#000" floodOpacity="0.55" />
             </filter>
           </defs>
 
           <rect x="0" y="0" width={geo.width} height={geo.height} fill="url(#sea)" />
 
-          {/* Landmass base (shows as a coastline under the cells) */}
-          <path d={geo.outline} fill="#11203a" filter="url(#landshadow)" />
-          <path d={geo.outline} fill="none" stroke="#4b6b86" strokeWidth={3} strokeLinejoin="round" />
+          {/* Landmass base + coastline (union of all mainland states) */}
+          <path d={geo.outline} fill="#0f1d34" filter="url(#landshadow)" />
+          <path d={geo.outline} fill="none" stroke="#4b6b86" strokeWidth={2.5} strokeLinejoin="round" />
 
-          {/* State cells */}
+          {/* State shapes — exact geometry from map.svg */}
           {ordered.map((gs) => {
             const idx = nameToIndex.get(gs.name);
             if (idx === undefined) return null;
@@ -114,23 +117,28 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
             const isActive = hovered === idx || selected === idx;
             const isCalled = l.called;
             return (
-              <motion.path
+              <g
                 key={gs.name}
-                d={gs.path}
                 onMouseEnter={() => setHovered(idx)}
                 onClick={() => setSelected(selected === idx ? null : idx)}
-                animate={{
-                  fill: fillFor(l, winnerColor),
-                }}
-                transition={{ duration: 0.4 }}
                 style={{
-                  stroke: isActive ? '#ffffff' : isCalled && winnerColor ? winnerColor : 'rgba(7,13,24,0.9)',
-                  strokeWidth: isActive ? 3.5 : 1.6,
                   cursor: 'pointer',
-                  filter: isCalled && winnerColor ? `drop-shadow(0 0 7px ${hexA(winnerColor, 0.55)})` : 'none',
+                  filter: isCalled && winnerColor ? `drop-shadow(0 0 6px ${hexA(winnerColor, 0.6)})` : 'none',
+                  transition: 'filter 0.4s',
                 }}
-                strokeLinejoin="round"
-              />
+              >
+                {gs.paths.map((d, k) => (
+                  <path
+                    key={k}
+                    d={d}
+                    fill={fillFor(l, winnerColor)}
+                    stroke={isActive ? '#ffffff' : isCalled && winnerColor ? winnerColor : 'rgba(7,13,24,0.92)'}
+                    strokeWidth={isActive ? 3 : 1.3}
+                    strokeLinejoin="round"
+                    style={{ transition: 'fill 0.4s, stroke 0.2s' }}
+                  />
+                ))}
+              </g>
             );
           })}
 
@@ -139,30 +147,31 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
             const idx = nameToIndex.get(gs.name);
             if (idx === undefined) return null;
             const l = live[idx];
-            const short = gs.name.replace('Islands', 'Is.');
-            const small = states[idx].seats < 6;
+            const fs = labelSize(gs.name, gs.bbox);
+            const tiny = fs < 10;
+            const short = gs.name.replace(' Islands', ' Is.');
             return (
               <g key={`lbl-${gs.name}`} pointerEvents="none">
                 <text
                   x={gs.labelX}
-                  y={gs.labelY - (small ? 0 : 5)}
+                  y={gs.labelY - (tiny ? 0 : 5)}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={small ? 12 : 15}
+                  fontSize={fs}
                   fontWeight={700}
                   fill="#fff"
-                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.55)', strokeWidth: 3 }}
+                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 }}
                 >
                   {short.toUpperCase()}
                 </text>
-                {!small && (
+                {!tiny && (
                   <text
                     x={gs.labelX}
-                    y={gs.labelY + 11}
+                    y={gs.labelY + fs * 0.75}
                     textAnchor="middle"
-                    fontSize={11}
+                    fontSize={fs * 0.72}
                     fontWeight={600}
-                    fill="rgba(255,255,255,0.7)"
+                    fill="rgba(255,255,255,0.72)"
                     className="num"
                     style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2.5 }}
                   >

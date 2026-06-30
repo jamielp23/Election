@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:map": "node scripts/buildMap.mjs",
+    "build:map": "python3 scripts/build_map_geo.py",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
@@ -21,8 +21,6 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
-    "d3-delaunay": "^6.0.4",
-    "polygon-clipping": "^0.15.7",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.5.3",

@@ -96,19 +96,20 @@ scripts/
 
 ### The geographic map
 
-The main view is a **vector map of the 36 states** reconstructed from the
-reference drawing of the country. Each state is a real shape that fills with its
+The main view is a **vector map of the 36 states** using the **exact geometry
+from [`map.svg`](map.svg)**. Each state is its real shape that fills with its
 leading party's colour (opacity tracks reporting confidence), with hover detail
 and click-to-pin; a **🗺 Map / ▦ Grid** toggle switches to the tile view.
 
-Because the source is a raster drawing, the geometry is generated
-cartographically rather than pixel-traced: a hand-traced **coastline** gives the
-national silhouette, and the interior is partitioned by a **Voronoi
-tessellation** of per-state seed points placed at each state's location on the
-drawing, then clipped to the coast (`scripts/buildMap.mjs`). This preserves
-every state's position, neighbours, relative size and the country's shape —
-including the western Medina bulge, the St. Julian spit, the southern Kerswell
-peninsula and the Bras-Panon Islands inset.
+`scripts/build_map_geo.py` parses `map.svg` (an Illustrator export: 41 state
+paths in `Layer_3`, 36 name labels in `Layer_4`) and resolves each state's name
+by which label falls inside which path (point-in-polygon). The Bras-Panon
+Islands are several island paths sharing one label and render in the inset box.
+**Every path's `d` string is preserved verbatim — the geometry is never
+modified**; the script only computes label anchor points and the coastline
+outline (the union of the mainland states) for presentation, emitting
+[`src/data/mapGeo.json`](src/data/mapGeo.json). Regenerate with
+`npm run build:map` (needs Python + `svgpathtools` + `shapely`).
 
 Clean separation of **UI / engine / state machine / spreadsheet data**. The
 engine is framework-free and unit-testable; the store throttles snapshots to
