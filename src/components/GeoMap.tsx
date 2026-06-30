@@ -20,14 +20,6 @@ function fillFor(live: StateLive, color: string | null): string {
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
-/** Font size that keeps a label inside its state's bounding box. */
-function labelSize(name: string, bbox: number[]): number {
-  const w = bbox[2] - bbox[0];
-  const h = bbox[3] - bbox[1];
-  const byWidth = (w * 1.7) / Math.max(6, name.length);
-  return Math.max(8, Math.min(15, byWidth, h * 0.5));
-}
-
 /**
  * Geographic vector map of the 36 states using the *exact* geometry from
  * map.svg (paths preserved verbatim). Each state fills with its leading
@@ -142,38 +134,47 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
             );
           })}
 
-          {/* Labels */}
+          {/* Labels — preserved verbatim from map.svg (position, size,
+              line breaks), so dense areas stay legible as the cartographer
+              laid them out. A small live stat sits under each name. */}
           {geo.states.map((gs) => {
             const idx = nameToIndex.get(gs.name);
             if (idx === undefined) return null;
             const l = live[idx];
-            const fs = labelSize(gs.name, gs.bbox);
-            const tiny = fs < 10;
-            const short = gs.name.replace(' Islands', ' Is.');
+            const lab = gs.label;
+            const lastY = Math.max(...lab.lines.map((li) => li.y));
+            const showStat = lab.size >= 13;
             return (
-              <g key={`lbl-${gs.name}`} pointerEvents="none">
+              <g
+                key={`lbl-${gs.name}`}
+                pointerEvents="none"
+                transform={`translate(${lab.tx} ${lab.ty})`}
+              >
                 <text
-                  x={gs.labelX}
-                  y={gs.labelY - (tiny ? 0 : 5)}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={fs}
+                  fontSize={lab.size}
                   fontWeight={700}
                   fill="#fff"
-                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.6)', strokeWidth: 3 }}
+                  style={{
+                    paintOrder: 'stroke',
+                    stroke: 'rgba(0,0,0,0.6)',
+                    strokeWidth: Math.max(2, lab.size * 0.16),
+                  }}
                 >
-                  {short.toUpperCase()}
+                  {lab.lines.map((li, i) => (
+                    <tspan key={i} x={li.x} y={li.y}>
+                      {li.text}
+                    </tspan>
+                  ))}
                 </text>
-                {!tiny && (
+                {showStat && (
                   <text
-                    x={gs.labelX}
-                    y={gs.labelY + fs * 0.75}
-                    textAnchor="middle"
-                    fontSize={fs * 0.72}
+                    x={lab.lines[0].x}
+                    y={lastY + lab.size * 0.95}
+                    fontSize={lab.size * 0.6}
                     fontWeight={600}
-                    fill="rgba(255,255,255,0.72)"
                     className="num"
-                    style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2.5 }}
+                    fill="rgba(255,255,255,0.74)"
+                    style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2 }}
                   >
                     {l.called ? `${states[idx].seats} ✓` : `${Math.round(l.reportingPct * 100)}%`}
                   </text>

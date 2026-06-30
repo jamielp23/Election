@@ -60,6 +60,30 @@ def translate(tr):
     return (float(m.group(1)), float(m.group(2))) if m else None
 
 
+def font_sizes(svg_text):
+    """Map style class -> font-size (px) from the SVG <style> block."""
+    return {
+        cls: float(sz)
+        for cls, sz in re.findall(r"\.(st\d+)\s*\{[^}]*?font-size:\s*([\d.]+)px", svg_text, re.S)
+    }
+
+
+def extract_label(t, sizes):
+    """Faithfully capture a <text> label: origin, font size and tspan lines."""
+    tx, ty = translate(t.get("transform"))
+    size = sizes.get(t.get("class"), 14.0)
+    lines = []
+    for s in t:
+        if tagname(s) == "tspan":
+            lines.append({
+                "x": float(s.get("x", 0)), "y": float(s.get("y", 0)),
+                "text": (s.text or "").strip(),
+            })
+    if not lines:
+        lines = [{"x": 0.0, "y": 0.0, "text": text_content(t)}]
+    return {"tx": round(tx, 2), "ty": round(ty, 2), "size": size, "lines": lines}
+
+
 def poly_of(d):
     p = parse_path(d)
     n = max(80, int(p.length() / 5))
@@ -78,14 +102,17 @@ def geom_to_path(geom):
 
 
 def main():
+    svg_text = SVG.read_text()
     root = ET.parse(SVG).getroot()
     vb = root.get("viewBox")
+    sizes = font_sizes(svg_text)
     layers = {c.get("id"): c for c in root if tagname(c) == "g"}
 
-    labels = [
-        (text_content(t), translate(t.get("transform")))
-        for t in layers["Layer_4"] if tagname(t) == "text"
-    ]
+    text_els = [t for t in layers["Layer_4"] if tagname(t) == "text"]
+    labels = [(text_content(t), translate(t.get("transform"))) for t in text_els]
+    # Preserve each label's exact markup (position, size, multi-line tspans),
+    # keyed by the model state name.
+    label_markup = {NAME_MAP[text_content(t)]: extract_label(t, sizes) for t in text_els}
     raw = [(p.get("d"), poly_of(p.get("d"))) for p in layers["Layer_3"] if tagname(p) == "path"]
 
     # Assign each path to a label by containment; unassigned paths are islands.
@@ -121,6 +148,7 @@ def main():
         states.append({
             "name": dn, "paths": g["paths"],
             "labelX": round(lx, 1), "labelY": round(ly, 1),
+            "label": label_markup[dn],
             "bbox": [round(minx, 1), round(miny, 1), round(maxx, 1), round(maxy, 1)],
             "inset": island,
         })
