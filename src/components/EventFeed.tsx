@@ -18,6 +18,7 @@ const ICON: Record<EventKind, string> = {
 export function EventFeed() {
   const feed = useStore((s) => s.feed);
   const parties = useStore((s) => s.data.parties);
+  const nightStart = useStore((s) => s.nightStart);
 
   return (
     <div className="glass flex min-h-0 flex-1 flex-col p-4">
@@ -60,7 +61,7 @@ export function EventFeed() {
                   </p>
                 </div>
                 <span className="num mt-0.5 shrink-0 text-[10px] text-white/30">
-                  {virtualClock(e.t)}
+                  {virtualClock(e.t, nightStart)}
                 </span>
               </motion.div>
             );

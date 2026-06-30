@@ -88,11 +88,12 @@ export function Timeline() {
   const vt = useStore((s) => s.virtualTime);
   const night = useStore((s) => s.virtualNight);
   const seek = useStore((s) => s.seek);
+  const nightStart = useStore((s) => s.nightStart);
   const reporting = useStore((s) => s.snapshot?.national.reportingPct ?? 0);
 
   return (
     <div className="flex items-center gap-3">
-      <span className="num text-xs text-white/40">{virtualClock(0)}</span>
+      <span className="num text-xs text-white/40">{virtualClock(0, nightStart)}</span>
       <div className="relative flex-1">
         <input
           type="range"
@@ -108,7 +109,7 @@ export function Timeline() {
           style={{ width: `${reporting * 100}%` }}
         />
       </div>
-      <span className="num text-xs text-white/40">{virtualClock(night)}</span>
+      <span className="num text-xs text-white/40">{virtualClock(night, nightStart)}</span>
     </div>
   );
 }

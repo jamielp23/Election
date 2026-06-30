@@ -8,6 +8,7 @@ export function TopBar({ onToggleResults, showResults }: { onToggleResults: () =
   const reporting = useStore((s) => s.snapshot?.national.reportingPct ?? 0);
   const phase = useStore((s) => s.phase);
   const seed = useStore((s) => s.settings.seed);
+  const nightStart = useStore((s) => s.nightStart);
 
   return (
     <header className="glass mx-3 mt-3 flex items-center gap-4 px-4 py-2.5">
@@ -21,7 +22,7 @@ export function TopBar({ onToggleResults, showResults }: { onToggleResults: () =
       </div>
 
       <div className="flex items-baseline gap-2 border-l border-white/10 pl-4">
-        <span className="num text-xl font-bold tabular-nums">{virtualClock(vt)}</span>
+        <span className="num text-xl font-bold tabular-nums">{virtualClock(vt, nightStart)}</span>
         <span className="text-[11px] text-white/40">
           {phase === 'finished' ? 'Count complete' : 'live'}
         </span>

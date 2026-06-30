@@ -9,7 +9,7 @@
 
 import { create } from 'zustand';
 import modelData from '../data/model.json';
-import { buildModel, VIRTUAL_NIGHT, type BuiltModel } from '../engine/buildModel';
+import { buildModel, type BuiltModel } from '../engine/buildModel';
 import { evalNational, generateEvents } from '../engine/evaluate';
 import * as sound from '../engine/sound';
 import type {
@@ -55,6 +55,8 @@ interface Store {
   data: ModelData;
   events: FeedEvent[];
   virtualNight: number;
+  /** Clock time (minutes from midnight) that election night begins (T0). */
+  nightStart: number;
 
   virtualTime: number;
   playing: boolean;
@@ -94,12 +96,12 @@ interface Store {
 }
 
 /** virtual minutes elapsed per real second, given the chosen night length. */
-function rate(settings: SimSettings): number {
-  return VIRTUAL_NIGHT / (settings.nightLengthMin * 60);
+function rate(model: BuiltModel, settings: SimSettings): number {
+  return model.nightEnd / (settings.nightLengthMin * 60);
 }
 
 function endTime(model: BuiltModel): number {
-  return Math.max(...model.states.map((s) => s.closeMin + s.durationMin)) + 2;
+  return model.nightEnd;
 }
 
 function recompute(get: () => Store, set: (p: Partial<Store>) => void, playSounds: boolean) {
@@ -144,7 +146,8 @@ export const useStore = create<Store>((set, get) => ({
   model: null,
   data: DATA,
   events: [],
-  virtualNight: VIRTUAL_NIGHT,
+  virtualNight: 420,
+  nightStart: 18 * 60 + 30,
 
   virtualTime: 0,
   playing: false,
@@ -170,11 +173,13 @@ export const useStore = create<Store>((set, get) => ({
   start: () => {
     const settings = get().settings;
     const model = buildModel(DATA, settings);
-    const events = generateEvents(model, VIRTUAL_NIGHT);
+    const events = generateEvents(model, model.nightEnd);
     sound.resumeAudio();
     set({
       model,
       events,
+      virtualNight: model.nightEnd,
+      nightStart: model.nightStart,
       phase: 'running',
       virtualTime: 0,
       playing: true,
@@ -249,7 +254,7 @@ export const useStore = create<Store>((set, get) => ({
     const state = get();
     if (!state.playing || !state.model) return;
     const dtSec = realDeltaMs / 1000;
-    const dv = dtSec * rate(state.settings) * state.speed;
+    const dv = dtSec * rate(state.model, state.settings) * state.speed;
     const end = endTime(state.model);
     let vt = state.virtualTime + dv;
     let playing = true;

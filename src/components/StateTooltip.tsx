@@ -1,5 +1,5 @@
 import { useStore } from '../store/useStore';
-import { fmtInt, fmtPct, fmtSignedPct, STATUS_LABEL } from '../lib/format';
+import { fmtInt, fmtPct, fmtSignedPct, STATUS_LABEL, virtualClock } from '../lib/format';
 
 /** Floating hover card with the full detail the brief asks for. */
 export function StateTooltip({ index, x, y }: { index: number; x: number; y: number }) {
@@ -60,6 +60,7 @@ export function StateTooltip({ index, x, y }: { index: number; x: number; y: num
           <span>Tier: <span className="text-white/80 capitalize">{model.tier}</span></span>
           <span>Last time: <span className="text-white/80">{parties[lastWinner].name}</span></span>
           <span>Remaining: <span className="num text-white/80">{fmtInt(remaining)}</span></span>
+          <span>Polls close: <span className="num text-white/80">{virtualClock(st.pollsCloseMin, 0)}</span></span>
         </div>
       </div>
     </div>

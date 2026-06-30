@@ -13,6 +13,12 @@ import type {
   StateStatus,
 } from './types';
 
+/** Format a virtual minute as an HH:MM clock label from the night's T0. */
+function virtualClockLabel(minutes: number, baseMin: number): string {
+  const total = Math.floor(baseMin + minutes) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 /** Smooth ease-in-out reporting curve (Perlin's smootherstep). */
 function curve(u: number): number {
   if (u <= 0) return 0;
@@ -168,17 +174,18 @@ export function generateEvents(model: BuiltModel, virtualNight: number): FeedEve
   let largestAnnounced = false;
   const MILE = [0.25, 0.5, 0.75];
 
-  // Group poll-closings that happen close together into one banner.
+  // Group states by their (real, scheduled) poll-closing time into one banner.
   const closeBuckets = new Map<number, number[]>();
   model.states.forEach((st, i) => {
-    const bucket = Math.round(st.closeMin / 8) * 8;
+    const bucket = Math.round(st.closeMin);
     if (!closeBuckets.has(bucket)) closeBuckets.set(bucket, []);
     closeBuckets.get(bucket)!.push(i);
   });
   for (const [bucket, idxs] of closeBuckets) {
     const nm = idxs.map((i) => model.states[i].raw.name);
     const list = nm.length > 3 ? `${nm.slice(0, 3).join(', ')} +${nm.length - 3} more` : nm.join(', ');
-    mk(Math.max(0.1, bucket), 'poll-close', `Polls close in ${list}.`, -1, false);
+    const clock = virtualClockLabel(bucket, model.nightStart);
+    mk(Math.max(0.1, bucket), 'poll-close', `Polls close (${clock}) in ${list}.`, -1, false);
   }
 
   for (let t = 1; t <= virtualNight; t++) {

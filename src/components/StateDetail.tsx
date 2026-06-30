@@ -67,6 +67,32 @@ export function StateDetail() {
         })}
       </div>
 
+      {/* Actual vote share at the last three elections (from the spreadsheet). */}
+      <div className="mt-3 border-t border-white/8 pt-2.5">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
+            Recent elections
+          </span>
+          <span className="num text-[9px] text-white/30">vote share</span>
+        </div>
+        <div className="grid gap-1">
+          {st.history.map((shares, e) => (
+            <div key={e} className="flex items-center gap-1.5">
+              <span className="num w-8 shrink-0 text-[9px] text-white/40">
+                {['E−2', 'E−1', 'Last'][e]}
+              </span>
+              <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-black/40">
+                {parties.map((p, i) =>
+                  shares[i] > 0 ? (
+                    <div key={i} style={{ width: `${shares[i] * 100}%`, background: p.color }} />
+                  ) : null,
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/8 pt-3 text-center">
         <div>
           <div className="num text-lg font-bold">{st.seats}</div>

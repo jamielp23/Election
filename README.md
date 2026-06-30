@@ -48,14 +48,23 @@ efficiency). The workbook re-rolls on F9 — we re-roll on a **seed**.
 
 ## 2. How this app stays faithful
 
-* The **exact** 36 states, 6 parties, populations, turnout, seats, final vote
-  shares and last-election results are extracted to [`src/data/model.json`](src/data/model.json).
+* The **exact** 36 states, 6 parties, populations, turnout, seats, real
+  **poll-closing times**, final vote shares and the **actual last-three-election
+  results** are extracted from the workbook to
+  [`src/data/model.json`](src/data/model.json).
+* **Poll-closing schedule** (Simulator "Polls close" column, 18:30–23:00) drives
+  the timeline: each state starts counting only when its polls close, and the
+  on-screen clock runs from the earliest close to the final declaration.
+* **BP First only contests Bras-Panon Islands** — its share is exactly 0 in
+  every other state, so it wins no votes and no seats there. Zero shares are
+  preserved through the whole pipeline (no floors re-introduce phantom votes).
 * The **seat draw** in [`buildModel.ts`](src/engine/buildModel.ts) is a literal
   port of the Engine sheet / `RunMonteCarlo` macro: cumulative
   `share × seatEff` thresholds, one `rand()` per seat, first-threshold-wins.
 * Verified numerically: per-state seat counts always sum to the state's seat
-  count; national seats sum to 602; the live count is monotonic and converges
-  **exactly** to the final draw; the same seed reproduces an identical night.
+  count; national seats sum to 602; BP First totals 0 outside Bras-Panon; the
+  live count is monotonic and converges **exactly** to the final draw; the same
+  seed reproduces an identical night.
 
 Settings (national swing, polling/turnout error, third-party boost) are the
 workbook's own levers — with all errors at 0 the app reproduces the

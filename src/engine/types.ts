@@ -19,12 +19,17 @@ export interface RawState {
   turnout: number;
   /** Votes cast = round(population * turnout) (Simulator H column). */
   votesCast: number;
-  /** Number of parliamentary seats contested in this state (Simulator I). */
+  /** Number of parliamentary seats contested in this state (Simulator J). */
   seats: number;
-  /** Final per-party vote share after the full model pipeline (Simulator J:O). */
+  /** Real-world poll-closing time, minutes from midnight (Simulator F). */
+  pollsCloseMin: number;
+  /** Final per-party vote share after the full model pipeline (Simulator K:P). */
   shares: number[];
-  /** Per-party vote share at the previous election (Voting History O:T). */
+  /** Per-party vote share at the previous election (Voting History "Last"). */
   lastShares: number[];
+  /** Actual per-party vote share for the last three elections
+   *  ([2 ago, 1 ago, last]), each summing to 1 (Voting History). */
+  history: number[][];
 }
 
 export interface ModelData {

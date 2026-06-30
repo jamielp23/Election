@@ -16,21 +16,6 @@
 import { Rng } from './rng';
 import type { CallTier, ModelData, SeatResult, SimSettings, StateModel } from './types';
 
-/** Virtual length of election night in minutes (e.g. 19:00 -> 02:00). */
-export const VIRTUAL_NIGHT = 420;
-
-/** Order in which regions' polls close (earliest first). */
-const REGION_CLOSE_ORDER = [
-  'East',
-  'Middle East',
-  'North',
-  'Middle West',
-  'South',
-  'West',
-  'St.Julian',
-  'Bras-Panon Islands',
-];
-
 /**
  * Relative reporting tempo of parties: rural/populist support (Con, Nat, BPF)
  * tends to report earlier; urban/mail-heavy support (SD, Lib, Ind) reports
@@ -39,7 +24,9 @@ const REGION_CLOSE_ORDER = [
 const PARTY_REPORT_BIAS = [-0.18, 0.16, 0.12, -0.14, 0.05, -0.2];
 
 function clampShares(shares: number[]): number[] {
-  const floored = shares.map((s) => Math.max(0.0002, s));
+  // Preserve exact zeros (e.g. BP First, which only contests Bras-Panon) so a
+  // party that doesn't stand never picks up phantom votes; floor the rest.
+  const floored = shares.map((s) => (s <= 0 ? 0 : Math.max(0.0002, s)));
   const sum = floored.reduce((a, b) => a + b, 0);
   return floored.map((s) => s / sum);
 }
@@ -85,6 +72,7 @@ function buildState(
   index: number,
   settings: SimSettings,
   root: Rng,
+  nightStart: number,
 ): StateModel {
   const raw = data.states[index];
   const nP = data.parties.length;
@@ -126,8 +114,9 @@ function buildState(
   const avgSeatVotes = totalVotes / Math.max(1, raw.seats);
   for (let k = 0; k < raw.seats; k++) {
     const w = seatWinners[k];
-    // Start from state shares + local noise, then guarantee the drawn winner leads.
-    const local = shares.map((sh) => Math.max(0.001, sh + rng.normal(0, 0.05)));
+    // Start from state shares + local noise, then guarantee the drawn winner
+    // leads. Parties that don't stand (share 0) stay at exactly 0 votes.
+    const local = shares.map((sh) => (sh <= 0 ? 0 : Math.max(0.001, sh + rng.normal(0, 0.05))));
     local[w] *= 1.25;
     const lsum = local.reduce((a, b) => a + b, 0);
     const seatTotal = Math.round(avgSeatVotes * rng.range(0.7, 1.3));
@@ -161,9 +150,9 @@ function buildState(
   const { tier, callPct } = classify(voteMargin, rng);
 
   // --- Timing -----------------------------------------------------------
-  const regionRank = Math.max(0, REGION_CLOSE_ORDER.indexOf(raw.region));
-  const closeMin =
-    regionRank * 16 + rng.range(0, 10) * (0.4 + settings.reportingRandomness);
+  // Polls close at the real scheduled time from the spreadsheet (minutes after
+  // the earliest-closing state). Counting only begins once polls close.
+  const closeMin = raw.pollsCloseMin - nightStart;
   // Bigger states take longer; speed setting + randomness widen the spread.
   const sizeFactor = 0.6 + Math.min(1.4, raw.seats / 50);
   const durationMin =
@@ -201,11 +190,18 @@ export interface BuiltModel {
   /** Whether the lead party reaches an overall majority. */
   majorityReached: boolean;
   finalVoteWinner: number;
+  /** Clock time (minutes from midnight) the first polls close — the T0 of the
+   *  virtual night. */
+  nightStart: number;
+  /** Virtual minute the last state finishes counting (timeline length). */
+  nightEnd: number;
 }
 
 export function buildModel(data: ModelData, settings: SimSettings): BuiltModel {
   const root = new Rng(settings.seed);
-  const states = data.states.map((_, i) => buildState(data, i, settings, root));
+  const nightStart = Math.min(...data.states.map((s) => s.pollsCloseMin));
+  const states = data.states.map((_, i) => buildState(data, i, settings, root, nightStart));
+  const nightEnd = Math.max(...states.map((s) => s.closeMin + s.durationMin)) + 2;
 
   const nP = data.parties.length;
   const finalSeats = new Array(nP).fill(0);
@@ -232,5 +228,7 @@ export function buildModel(data: ModelData, settings: SimSettings): BuiltModel {
     finalWinner,
     finalVoteWinner,
     majorityReached: finalSeats[finalWinner] >= data.majority,
+    nightStart,
+    nightEnd,
   };
 }

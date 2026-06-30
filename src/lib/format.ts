@@ -15,10 +15,10 @@ export function fmtSignedPct(frac: number, dp = 1): string {
   return `${v >= 0 ? '+' : ''}${v.toFixed(dp)}`;
 }
 
-/** Convert a virtual-minute clock (T0 = 19:00) into an HH:MM label. */
-export function virtualClock(minutes: number): string {
-  const base = 19 * 60; // 19:00
-  const total = Math.floor(base + minutes) % (24 * 60);
+/** Convert a virtual minute into an HH:MM label, given the night's T0
+ *  (minutes from midnight; defaults to 18:30, the earliest poll close). */
+export function virtualClock(minutes: number, baseMin = 18 * 60 + 30): string {
+  const total = Math.floor(baseMin + minutes) % (24 * 60);
   const h = Math.floor(total / 60);
   const m = total % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
