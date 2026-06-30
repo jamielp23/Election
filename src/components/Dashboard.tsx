@@ -5,6 +5,7 @@ import { SeatTracker } from './SeatTracker';
 import { NationalVote } from './NationalVote';
 import { CoalitionPanel } from './CoalitionPanel';
 import { TileMap } from './TileMap';
+import { GeoMap } from './GeoMap';
 import { EventFeed } from './EventFeed';
 import { StateDetail } from './StateDetail';
 import { ResultsTable } from './ResultsTable';
@@ -14,6 +15,7 @@ import { Controls, Timeline } from './Controls';
 
 export function Dashboard() {
   const [showResults, setShowResults] = useState(false);
+  const [mapView, setMapView] = useState<'geo' | 'grid'>('geo');
 
   return (
     <div className="relative flex h-full flex-col">
@@ -31,7 +33,11 @@ export function Dashboard() {
 
         {/* Center column */}
         <div className="flex min-h-0 flex-col gap-3">
-          <TileMap />
+          {mapView === 'geo' ? (
+            <GeoMap onSwitchView={() => setMapView('grid')} />
+          ) : (
+            <TileMap onSwitchView={() => setMapView('geo')} />
+          )}
           {/* mobile/narrow fallback controls live under the map */}
           <div className="glass flex flex-col gap-2 p-3 lg:hidden">
             <Timeline />

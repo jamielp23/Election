@@ -21,7 +21,7 @@ function tileColor(live: StateLive, color: string | null): string {
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
-export function TileMap() {
+export function TileMap({ onSwitchView }: { onSwitchView: () => void }) {
   const live = useStore((s) => s.snapshot?.live);
   const parties = useStore((s) => s.data.parties);
   const states = useStore((s) => s.data.states);
@@ -44,13 +44,22 @@ export function TileMap() {
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="panel-title">The map — 36 states</div>
-        <div className="flex items-center gap-3 text-[10px] text-white/40">
-          {parties.map((p) => (
-            <span key={p.name} className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-sm" style={{ background: p.color }} />
-              {p.abbr}
-            </span>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 text-[10px] text-white/40">
+            {parties.map((p) => (
+              <span key={p.name} className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-sm" style={{ background: p.color }} />
+                {p.abbr}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={onSwitchView}
+            className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] hover:bg-white/10"
+            title="Switch to geographic map"
+          >
+            🗺 Map
+          </button>
         </div>
       </div>
 
