@@ -20,6 +20,19 @@ function fillFor(live: StateLive, color: string | null): string {
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
+/** Uniform label font size across every state (map units). */
+const LABEL_SIZE = 13;
+
+/**
+ * Per-state label-position overrides. St. Julian is a thin coastal spit too
+ * narrow to hold its label, so — like the Bras-Panon inset — its label sits
+ * just outside the shape in open water. Every other state keeps the
+ * cartographer's original placement from map.svg.
+ */
+const LABEL_OVERRIDES: Record<string, { tx: number; ty: number; lines: { x: number; y: number; text: string }[] }> = {
+  'St.Julian': { tx: 40, ty: 992, lines: [{ x: 0, y: 0, text: 'ST. JULIAN' }] },
+};
+
 /**
  * Geographic vector map of the 36 states using the *exact* geometry from
  * map.svg (paths preserved verbatim). Each state fills with its leading
@@ -134,16 +147,15 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
             );
           })}
 
-          {/* Labels — preserved verbatim from map.svg (position, size,
-              line breaks), so dense areas stay legible as the cartographer
-              laid them out. A small live stat sits under each name. */}
+          {/* Labels — original placement from map.svg (St. Julian moved just
+              outside its narrow spit), at a uniform font size across states.
+              A small live stat sits under each name. */}
           {geo.states.map((gs) => {
             const idx = nameToIndex.get(gs.name);
             if (idx === undefined) return null;
             const l = live[idx];
-            const lab = gs.label;
+            const lab = LABEL_OVERRIDES[gs.name] ?? gs.label;
             const lastY = Math.max(...lab.lines.map((li) => li.y));
-            const showStat = lab.size >= 13;
             return (
               <g
                 key={`lbl-${gs.name}`}
@@ -151,13 +163,13 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
                 transform={`translate(${lab.tx} ${lab.ty})`}
               >
                 <text
-                  fontSize={lab.size}
+                  fontSize={LABEL_SIZE}
                   fontWeight={700}
                   fill="#fff"
                   style={{
                     paintOrder: 'stroke',
                     stroke: 'rgba(0,0,0,0.6)',
-                    strokeWidth: Math.max(2, lab.size * 0.16),
+                    strokeWidth: LABEL_SIZE * 0.16,
                   }}
                 >
                   {lab.lines.map((li, i) => (
@@ -166,19 +178,17 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
                     </tspan>
                   ))}
                 </text>
-                {showStat && (
-                  <text
-                    x={lab.lines[0].x}
-                    y={lastY + lab.size * 0.95}
-                    fontSize={lab.size * 0.6}
-                    fontWeight={600}
-                    className="num"
-                    fill="rgba(255,255,255,0.74)"
-                    style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2 }}
-                  >
-                    {l.called ? `${states[idx].seats} ✓` : `${Math.round(l.reportingPct * 100)}%`}
-                  </text>
-                )}
+                <text
+                  x={lab.lines[0].x}
+                  y={lastY + LABEL_SIZE * 0.95}
+                  fontSize={LABEL_SIZE * 0.6}
+                  fontWeight={600}
+                  className="num"
+                  fill="rgba(255,255,255,0.74)"
+                  style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.5)', strokeWidth: 2 }}
+                >
+                  {l.called ? `${states[idx].seats} ✓` : `${Math.round(l.reportingPct * 100)}%`}
+                </text>
               </g>
             );
           })}
