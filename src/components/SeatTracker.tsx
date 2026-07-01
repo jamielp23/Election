@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { AnimatedNumber } from './AnimatedNumber';
+import { LeaderAvatar } from './LeaderAvatar';
+import { LEADERS } from '../data/leaders';
 import { fmtInt, hexA } from '../lib/format';
 
 export function SeatTracker() {
@@ -20,6 +22,7 @@ export function SeatTracker() {
   const leadSeats = seats[lead];
   const reachedMajority = leadSeats >= majority;
   const counted = snap.national.totalSeats;
+  const leadLeader = LEADERS[leadParty.name] ?? { name: null, photo: null };
 
   return (
     <div className="glass flex flex-col p-5">
@@ -28,13 +31,24 @@ export function SeatTracker() {
         <div className="num text-[11px] text-white/40">{fmtInt(counted)}/{fmtInt(total)} declared</div>
       </div>
 
-      {/* Headline */}
-      <div className="mt-3 flex items-end gap-4">
+      {/* Headline — largest party + its leader */}
+      <div className="mt-3 flex items-end gap-3">
+        <LeaderAvatar
+          key={leadLeader.photo ?? leadParty.name}
+          photo={leadLeader.photo}
+          name={leadLeader.name}
+          color={leadParty.color}
+          size={64}
+          className="mb-0.5"
+        />
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-3.5 w-3.5 rounded-full" style={{ background: leadParty.color }} />
+            <span className="h-3 w-3 rounded-full" style={{ background: leadParty.color }} />
             <span className="text-sm font-semibold text-white/70">{leadParty.name}</span>
           </div>
+          {leadLeader.name && (
+            <div className="text-[11px] leading-tight text-white/45">{leadLeader.name}</div>
+          )}
           <AnimatedNumber
             value={leadSeats}
             className="num block text-6xl font-black leading-none tracking-tight"
