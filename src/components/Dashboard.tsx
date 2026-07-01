@@ -4,6 +4,7 @@ import { TopBar } from './TopBar';
 import { SeatTracker } from './SeatTracker';
 import { NationalVote } from './NationalVote';
 import { CoalitionPanel } from './CoalitionPanel';
+import { LeadersPanel } from './LeadersPanel';
 import { TileMap } from './TileMap';
 import { GeoMap } from './GeoMap';
 import { EventFeed } from './EventFeed';
@@ -29,6 +30,7 @@ export function Dashboard() {
           <SeatTracker />
           <NationalVote />
           <CoalitionPanel />
+          <LeadersPanel />
         </div>
 
         {/* Center column */}
