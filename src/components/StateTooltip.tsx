@@ -56,7 +56,7 @@ export function StateTooltip({ index, x, y }: { index: number; x: number; y: num
         <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-white/8 pt-2 text-[10px] text-white/50">
           <span>Seats: <span className="num text-white/80">{st.seats}</span></span>
           <span>Margin: <span className="num text-white/80">{live.countedTotal > 0 ? fmtSignedPct(live.margin, 1) : '—'}</span></span>
-          <span>Est. winner: <span className="text-white/80">{live.leader >= 0 ? parties[live.leader].name : '—'}</span></span>
+          <span>Most seats: <span className="text-white/80">{live.seatLeader >= 0 ? parties[live.seatLeader].name : '—'}</span></span>
           <span>Tier: <span className="text-white/80 capitalize">{model.tier}</span></span>
           <span>Last time: <span className="text-white/80">{parties[lastWinner].name}</span></span>
           <span>Remaining: <span className="num text-white/80">{fmtInt(remaining)}</span></span>

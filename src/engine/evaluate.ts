@@ -67,6 +67,20 @@ export function evalState(st: StateModel, nP: number, t: number): StateLive {
   }
   const margin = countedTotal > 0 ? (top - Math.max(0, second)) / countedTotal : 0;
 
+  // Leader by seats declared so far (ties broken by counted votes). This is
+  // what colours the map — the party holding the most seats in the state.
+  let seatLeader = -1;
+  for (let p = 0; p < nP; p++) {
+    if (provisionalSeats[p] === 0) continue;
+    if (
+      seatLeader < 0 ||
+      provisionalSeats[p] > provisionalSeats[seatLeader] ||
+      (provisionalSeats[p] === provisionalSeats[seatLeader] && countedVotes[p] > countedVotes[seatLeader])
+    ) {
+      seatLeader = p;
+    }
+  }
+
   const called = closed && reportingPct >= st.callPct && reportingPct > 0;
   const calledFor = called ? st.winner : -1;
 
@@ -86,6 +100,7 @@ export function evalState(st: StateModel, nP: number, t: number): StateLive {
     countedTotal,
     provisionalSeats,
     leader,
+    seatLeader,
     margin,
     closed,
     called,

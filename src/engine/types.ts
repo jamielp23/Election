@@ -114,6 +114,8 @@ export interface StateLive {
   provisionalSeats: number[];
   /** Current leader by counted votes (-1 if nothing counted). */
   leader: number;
+  /** Current leader by seats declared so far (-1 if no seat declared yet). */
+  seatLeader: number;
   /** Margin in points between current top two by counted votes. */
   margin: number;
   closed: boolean;

@@ -16,7 +16,7 @@ const STATUS_ALPHA: Record<StateStatus, number> = {
 };
 
 function fillFor(live: StateLive, color: string | null): string {
-  if (!color || live.leader < 0) return 'rgba(148,163,184,0.1)';
+  if (!color) return 'rgba(148,163,184,0.1)';
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
@@ -118,7 +118,7 @@ export function GeoMap({ onSwitchView }: { onSwitchView: () => void }) {
             const idx = nameToIndex.get(gs.name);
             if (idx === undefined) return null;
             const l = live[idx];
-            const winnerColor = l.leader >= 0 ? parties[l.leader].color : null;
+            const winnerColor = l.seatLeader >= 0 ? parties[l.seatLeader].color : null;
             const isActive = hovered === idx || selected === idx;
             const isCalled = l.called;
             return (

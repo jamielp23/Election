@@ -17,7 +17,7 @@ const STATUS_ALPHA: Record<StateStatus, number> = {
 };
 
 function tileColor(live: StateLive, color: string | null): string {
-  if (!color || live.leader < 0) return 'rgba(255,255,255,0.05)';
+  if (!color || live.seatLeader < 0) return 'rgba(255,255,255,0.05)';
   return hexA(color, STATUS_ALPHA[live.status]);
 }
 
@@ -72,7 +72,7 @@ export function TileMap({ onSwitchView }: { onSwitchView: () => void }) {
       >
         {TILES.map((tile) => {
           const l = live[tile.index];
-          const winnerColor = l.leader >= 0 ? parties[l.leader].color : null;
+          const winnerColor = l.seatLeader >= 0 ? parties[l.seatLeader].color : null;
           const bg = tileColor(l, winnerColor);
           const isCalled = l.called;
           const isActive = hovered === tile.index || selected === tile.index;
